@@ -9,14 +9,30 @@ pokemon_list=("bulbasaur" "ivysaur" "venusaur" "charmander" "charmeleon")
 for pokemon in "${pokemon_list[@]}"; do
     echo "Fetching data for ${pokemon}..."
     
-    # Make API request with delay to avoid rate limiting
-    curl -s "https://pokeapi.co/api/v2/pokemon/${pokemon}" -o "pokemon_data/${pokemon}.json"
+    attempts=0
+    max_attempts=3
+    success=0
     
-    # Check if successful
-    if [ $? -eq 0 ] && [ -s "pokemon_data/${pokemon}.json" ]; then
-        echo "Saved data to pokemon_data/${pokemon}.json ✅"
-    else
-        echo "Failed to fetch data for ${pokemon}" >> errors.txt
+    while [ $attempts -lt $max_attempts ] && [ $success -eq 0 ]; do
+        # Make API request
+        curl -s --max-time 10 "https://pokeapi.co/api/v2/pokemon/${pokemon}" -o "pokemon_data/${pokemon}.json"
+        
+        # Check if successful
+        if [ $? -eq 0 ] && [ -s "pokemon_data/${pokemon}.json" ]; then
+            success=1
+            echo "Saved data to pokemon_data/${pokemon}.json ✅"
+        else
+            attempts=$((attempts + 1))
+            if [ $attempts -lt $max_attempts ]; then
+                echo "Attempt $attempts failed. Retrying in 2 seconds..."
+                sleep 2
+            fi
+        fi
+    done
+    
+    if [ $success -eq 0 ]; then
+        echo "Failed to fetch data for ${pokemon} after $max_attempts attempts" >> errors.txt
+        echo "Failed to fetch data for ${pokemon} ❌"
     fi
     
     # Add delay between requests (1 second)
