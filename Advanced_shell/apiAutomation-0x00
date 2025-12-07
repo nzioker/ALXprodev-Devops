@@ -1,0 +1,9 @@
+#!/bin/bash
+
+# Make API request for Pikachu
+curl -s "https://pokeapi.co/api/v2/pokemon/pikachu" -o data.json 2>> errors.txt
+
+# Check if request was successful
+if [ $? -ne 0 ]; then
+    echo "Failed to fetch Pikachu data" >> errors.txt
+fi
